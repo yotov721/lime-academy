@@ -4,7 +4,7 @@ pragma abicoder v2;
 
 import "./Ownable.sol";
 
-contract USElection is Ownable{
+contract USElection is Ownable {
     uint8 public constant BIDEN = 1;
     uint8 public constant TRUMP = 2;
 
@@ -15,13 +15,13 @@ contract USElection is Ownable{
 
     struct StateResult {
         string name;
-        uint votesBiden;
-        uint votesTrump;
+        uint256 votesBiden;
+        uint256 votesTrump;
         uint8 stateSeats;
     }
 
     event LogStateResult(uint8 winner, uint8 stateSeats, string state);
-    event LogElectionEnded(uint winner);
+    event LogElectionEnded(uint256 winner);
 
     modifier onlyActiveElection() {
         require(!electionEnded, "The election has ended already");
@@ -38,6 +38,11 @@ contract USElection is Ownable{
             result.votesBiden != result.votesTrump,
             "There cannot be a tie"
         );
+        require(
+            !resultsSubmitted[result.name],
+            "This state result was already submitted!"
+        );
+
         uint8 winner;
         if (result.votesBiden > result.votesTrump) {
             winner = BIDEN;
@@ -46,6 +51,7 @@ contract USElection is Ownable{
         }
 
         seats[winner] += result.stateSeats;
+        resultsSubmitted[result.name] = true;
 
         emit LogStateResult(winner, result.stateSeats, result.name);
     }
