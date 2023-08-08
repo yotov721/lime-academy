@@ -3,9 +3,6 @@ import "@nomicfoundation/hardhat-toolbox";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-console.log(process.env.INFURA_KEY)
-console.log(process.env.PRIVATE_KEY)
-
 
 const config: HardhatUserConfig = {
   solidity: {
