@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
-import "./Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract BookLibrary is Ownable {
 
@@ -58,7 +58,7 @@ contract BookLibrary is Ownable {
 
     function returnBook(uint256 _bookId) external {
         require(userBorrowedBooks[msg.sender][_bookId], "You have not borrowed this book");
-        
+
         userBorrowedBooks[msg.sender][_bookId] = false;
         books[_bookId].copiesAvailable++;
     }
