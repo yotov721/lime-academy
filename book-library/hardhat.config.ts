@@ -1,7 +1,17 @@
-import { HardhatUserConfig } from "hardhat/config";
+import { HardhatUserConfig, task } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import * as dotenv from "dotenv";
 dotenv.config();
+
+const lazyImport = async (module: any) => {
+  return await import(module);
+};
+
+task("deploy", "Deploys contracts").setAction(async () => {
+  const { deploy } = await lazyImport("./tasks/index");
+  await deploy();
+});
+
 
 const config: HardhatUserConfig = {
   solidity: {
