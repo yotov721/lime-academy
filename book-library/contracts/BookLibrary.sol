@@ -1,39 +1,73 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract BookLibrary is Ownable {
-
-    uint256 bookId = 1;
-
     struct Book {
-        string name;
-        uint256 copiesAvailable;
+        string title;
+        uint8 copiesAvailable;
         address[] borrowers;
+        bool exists;
     }
 
-    mapping(uint256 => Book) books;
-    mapping(address => mapping(uint256 => bool)) userBorrowedBooks;
+    bytes32[] public bookKeys;
+    mapping(bytes32 => Book) books;
+    mapping(address => mapping(bytes32 => bool)) userBorrowedBooks;
 
-    function addBookCopies(uint256 _bookId, uint256 _copies) external onlyOwner {
-        require(_bookId <= bookId, "Book with this ID does not exist");
-        require(_copies != 0, "Copies need to be more than 0");
+    event BookAdded(string title, uint8 copies);
+    event BookUpdated(string title, uint8 copies);
+    event BookBorrowed(string title, address user);
+    event BookReturned(string title, address user);
 
-        books[_bookId].copiesAvailable += _copies;
+    modifier validBookData(string memory _title, uint8 _copies) {
+        bytes memory title = bytes(_title);
+        require(title.length > 0 && _copies > 0, "Book data is not valid");
+        _;
     }
 
-    function addNewBook(string calldata _name, uint256 _copies) external onlyOwner {
-        bookId++;
-        books[bookId] = Book(_name, _copies, new address[](0));
+    function addBook(string memory _title, uint8 _copies)
+        public
+        onlyOwner
+        validBookData(_title, _copies)
+    {
+        bytes32 bookKey = keccak256(abi.encodePacked(_title));
+
+        Book storage book = books[bookKey];
+
+        if (book.exists) {
+            book.copiesAvailable += _copies;
+            emit BookUpdated(_title, _copies);
+        } else {
+            address[] memory borrowers;
+
+            Book memory newBook = Book({
+                title: _title,
+                copiesAvailable: _copies,
+                borrowers: borrowers,
+                exists: true
+            });
+
+            books[bookKey] = newBook;
+            bookKeys.push(bookKey);
+            emit BookAdded(_title, _copies);
+        }
     }
 
-    function listAvailableBooks() external view returns(Book[] memory) {
-        Book[] memory availableBooks = new Book[](bookId);
+    function listAvailableBooks() external view returns (Book[] memory) {
+        uint256 availableCount = 0;
+
+        for (uint256 i = 1; i <= bookKeys.length; i++) {
+            if (books[bookKeys[i]].copiesAvailable != 0) {
+                availableCount++;
+            }
+        }
+
+        Book[] memory availableBooks = new Book[](availableCount);
         uint256 counter = 0;
-
-        for (uint i = 1; i <= bookId; i++) {
-            if (books[i].copiesAvailable != 0) {
-                availableBooks[counter] = books[i];
+        for (uint256 i = 0; i < bookKeys.length; i++) {
+            bytes32 bookKey = bookKeys[i];
+            if (books[bookKey].copiesAvailable > 0) {
+                availableBooks[counter] = books[bookKey];
                 counter++;
             }
         }
@@ -41,25 +75,43 @@ contract BookLibrary is Ownable {
         return availableBooks;
     }
 
-    function listBookBorrowers(uint256 _bookId) external view returns (address[] memory) {
-        require(_bookId <= bookId, "Book with this ID does not exist");
+    function listBookBorrowers(bytes32 _bookId)
+        external
+        view
+        returns (address[] memory)
+    {
+        require(books[_bookId].exists, "Book with this ID does not exist");
 
         return books[_bookId].borrowers;
     }
 
-    function borrowBook(uint256 _bookId) external {
-        require(books[_bookId].copiesAvailable != 0, "No copies available");
-        require(!userBorrowedBooks[msg.sender][_bookId], "You have already borrowed this book");
+    function borrowBook(bytes32 _bookId) external {
+        Book storage book = books[_bookId];
+
+        require(book.copiesAvailable != 0, "No copies available");
+        require(
+            !userBorrowedBooks[msg.sender][_bookId],
+            "You have already borrowed this book"
+        );
 
         userBorrowedBooks[msg.sender][_bookId] = true;
-        books[_bookId].copiesAvailable--;
-        books[_bookId].borrowers.push(msg.sender);
+        book.copiesAvailable--;
+        book.borrowers.push(msg.sender);
+
+        emit BookBorrowed(book.title, msg.sender);
     }
 
-    function returnBook(uint256 _bookId) external {
-        require(userBorrowedBooks[msg.sender][_bookId], "You have not borrowed this book");
+    function returnBook(bytes32 _bookId) external {
+        Book storage book = books[_bookId];
+
+        require(
+            userBorrowedBooks[msg.sender][_bookId],
+            "You have not borrowed this book"
+        );
 
         userBorrowedBooks[msg.sender][_bookId] = false;
-        books[_bookId].copiesAvailable++;
+        book.copiesAvailable++;
+
+        emit BookReturned(book.title, msg.sender);
     }
 }
