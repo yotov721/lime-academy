@@ -12,6 +12,10 @@ task("deploy", "Deploys contracts").setAction(async () => {
   await deploy();
 });
 
+task("deploy-locally", "Deploys contracts").setAction(async () => {
+  const { deployLocally } = await lazyImport("./tasks/index");
+  await deployLocally();
+});
 
 const config: HardhatUserConfig = {
   solidity: {
