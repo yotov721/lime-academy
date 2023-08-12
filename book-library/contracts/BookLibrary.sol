@@ -11,8 +11,8 @@ contract BookLibrary is Ownable {
     }
 
     bytes32[] public bookKeys;
-    mapping(bytes32 => Book) books;
-    mapping(address => mapping(bytes32 => bool)) userBorrowedBooks;
+    mapping(bytes32 => Book) public books;
+    mapping(address => mapping(bytes32 => bool)) public userBorrowedBooks;
 
     event BookAdded(string title, uint8 copies);
     event BookUpdated(string title, uint8 copies);
@@ -56,7 +56,7 @@ contract BookLibrary is Ownable {
     function listAvailableBooks() external view returns (Book[] memory) {
         uint256 availableCount = 0;
 
-        for (uint256 i = 1; i <= bookKeys.length; i++) {
+        for (uint256 i = 0; i < bookKeys.length; i++) {
             if (books[bookKeys[i]].copiesAvailable != 0) {
                 availableCount++;
             }
@@ -64,12 +64,10 @@ contract BookLibrary is Ownable {
 
         Book[] memory availableBooks = new Book[](availableCount);
         uint256 counter = 0;
-        for (uint256 i = 0; i < bookKeys.length; i++) {
+        for (uint256 i = 0; i < availableCount; i++) {
             bytes32 bookKey = bookKeys[i];
-            if (books[bookKey].copiesAvailable > 0) {
-                availableBooks[counter] = books[bookKey];
-                counter++;
-            }
+            availableBooks[counter] = books[bookKey];
+            counter++;
         }
 
         return availableBooks;
