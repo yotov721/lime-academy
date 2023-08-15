@@ -1,10 +1,12 @@
 const { ethers } = require("ethers");
 const USElection = require('./USElection.json')
+const dotenv = require("dotenv");
+dotenv.config();
 
 const run = async function() {
-const provider = new ethers.InfuraProvider("sepolia", "6f5b2a5aa4a24df19d90749cf3b59934")
+const provider = new ethers.InfuraProvider("sepolia", process.env.INFURA_KEY)
 
-const wallet = new ethers.Wallet("32f1764f5735ff1f39387c4b14af8c570d6e435afe24eef9a663666b470ed8d3", provider)
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
 const balance = await provider.getBalance(wallet.getAddress())
 console.log("Balance: " + balance)
 
