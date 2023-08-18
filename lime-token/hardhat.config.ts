@@ -10,6 +10,13 @@ task("deploy-lime", "Deploys LimeToken").setAction(async () => {
   await main();
 });
 
+task("deploy-nft", "Deploys LimeToken")
+  .addParam("privateKey", "Please provide the private key")
+  .setAction(async ({ privateKey }) => {
+    const { main } = await lazyImport("./scripts/deploy-nft");
+    await main(privateKey);
+  });
+
 const config: HardhatUserConfig = {
   solidity: "0.8.19",
 };
