@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract ERC20 {
-    uint256 private totalSupply;
+contract ERC20 is IERC20 {
+    uint256 private _totalSupply;
 
     string private name;
     string private symbol;
@@ -15,17 +16,26 @@ contract ERC20 {
     error InsufficientAllowance(address spender, uint256 allowance, uint256 value);
     error InsufficientBalance(address spender, uint256 burnValue, uint256 value);
 
-    event Transfer(address indexed from, address indexed to, uint256 value);
     event Approve(address indexed owner, address indexed spender, uint256 value);
+    event Burn(address indexed owner, uint256 value);
 
     constructor(
         string memory _name,
         string memory _symbol,
-        uint256 _totalSupply
+        uint256 totalSupply_
     ) {
+        require(_totalSupply != 0, "Supply must be greater than zero");
         name = _name;
         symbol = _symbol;
-        totalSupply = _totalSupply;
+        _totalSupply = totalSupply_;
+    }
+
+    function totalSupply() external view returns (uint256){
+        return _totalSupply;
+    }
+
+    function allowance(address owner, address spender) external view returns (uint256) {
+        return _allowances[owner][spender];
     }
 
     function balanceOf(address _address) public view returns (uint256) {
@@ -84,8 +94,9 @@ contract ERC20 {
         if (balance < _value) {
             revert InsufficientBalance(msg.sender, _value, balance);
         }
-        totalSupply -= _value;
+        _totalSupply -= _value;
 
         _balances[msg.sender] = balance - _value;
+        emit Burn(msg.sender, _value);
     }
 }
