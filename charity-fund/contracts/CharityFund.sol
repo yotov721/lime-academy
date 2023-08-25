@@ -19,13 +19,19 @@ contract Charityfund is Ownable {
     mapping(uint256 => Fund) public funds;
     uint256 public fundsCount;
 
+    error FundClosedError();
+    error DeadlineNotPassedError();
+    error DonationExceedsTargetError();
+    error FundNotClosedError();
+    error NotDonatedError();
+
     event FundCreated(uint256 fundId, string cause, uint256 targetAmount, uint256 deadline);
     event DonationReceived(uint256 fundId, address indexed donor, uint256 amount);
     event FundClosed(uint256 fundId, uint256 totalDonated);
     event RefundClaimed(uint256 fundId, address donator, uint256 donatedAmount);
 
     modifier isOpen(uint256 fundId) {
-        require(!funds[fundId].isClosed, "The fund has finished");
+        if (funds[fundId].isClosed) revert FundClosedError();
         _;
     }
 
@@ -41,8 +47,8 @@ contract Charityfund is Ownable {
 
     function donate(uint256 fundId) external payable isOpen(fundId) {
         Fund storage fund = funds[fundId];
-        require(block.timestamp <= fund.deadline, "Donations are closed, and the deadline has passed");
-        require(fund.donatedAmount.add(msg.value) <= fund.targetAmount, "Donation exceeds the target amount");
+        if (block.timestamp > fund.deadline) revert DeadlineNotPassedError();
+        if (fund.donatedAmount.add(msg.value) > fund.targetAmount) revert DonationExceedsTargetError();
 
         fund.userDonation[msg.sender] = fund.userDonation[msg.sender].add(msg.value);
         fund.donatedAmount = fund.donatedAmount.add(msg.value);
@@ -57,22 +63,22 @@ contract Charityfund is Ownable {
 
     function collectFunds(uint256 fundId) external onlyOwner {
         Fund storage fund = funds[fundId];
-        require(fund.isClosed, "The fund is still running");
+        if (!fund.isClosed) revert FundNotClosedError();
         uint256 balance = fund.donatedAmount;
-        // Draining of funds prevention during re-entrancy
         fund.donatedAmount = 0;
         payable(owner()).transfer(balance);
     }
 
     function getRefund(uint256 fundId) external {
         Fund storage fund = funds[fundId];
-        require(block.timestamp > fund.deadline, "The fund is still running");
+        if (block.timestamp <= fund.deadline) revert DeadlineNotPassedError();
         uint256 amountToRefund = fund.userDonation[msg.sender];
 
-        require(amountToRefund > 0, "You haven't donated to this fund");
+        if (amountToRefund == 0) revert NotDonatedError();
         fund.userDonation[msg.sender] = 0;
+
         (bool success, ) = payable(msg.sender).call{value: amountToRefund}("");
-        require(success, "Refund failed");
+        if (!success) revert("Refund failed");
 
         emit RefundClaimed(fundId, msg.sender, amountToRefund);
     }
