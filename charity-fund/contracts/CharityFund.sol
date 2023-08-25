@@ -53,10 +53,10 @@ contract Charityfund is Ownable {
      * @dev Creates a new charity fund.
      * @param _cause The cause or purpose of the fund.
      * @param _targetAmount The target amount of Ether to be raised.
-     * @param _deadlineInDays The duration of the fund in days.
+     * @param _deadlineInSeconds The duration of the fund in seconds.
      */
-    function createFund(string memory _cause, uint256 _targetAmount, uint256 _deadlineInDays) external onlyOwner {
-        uint256 deadline = block.timestamp.add(_deadlineInDays.mul(1 days));
+    function createFund(string memory _cause, uint256 _targetAmount, uint256 _deadlineInSeconds) external onlyOwner {
+        uint256 deadline = block.timestamp.add(_deadlineInSeconds);
         Fund storage newFund = funds[fundsCount++];
         newFund.cause = _cause;
         newFund.targetAmount = _targetAmount;

@@ -15,8 +15,8 @@ describe("CharityFund", function () {
 
         const cause = "Cause1";
         const targetAmount = ethers.parseEther('2');
-        const deadlineInDays = 1;
-        await charityFundContract.createFund(cause, targetAmount, deadlineInDays);
+        const deadline = time.duration.days(1);
+        await charityFundContract.createFund(cause, targetAmount, deadline);
         const fund = await charityFundContract.funds(0);
 
         return { charityFundContract, owner, otherAccount, targetAmount, fund };
@@ -27,10 +27,10 @@ describe("CharityFund", function () {
             const { owner, charityFundContract } = await loadFixture(deployCharityFund);
             const cause = "Cause2";
             const targetAmount = ethers.parseEther("10");
-            const deadline = 7;
+            const deadlineInSeconds = time.duration.days(7); // Use the correct value here
             const initialFundsCount = await charityFundContract.fundsCount();
 
-            await charityFundContract.connect(owner).createFund(cause, targetAmount, deadline);
+            await charityFundContract.connect(owner).createFund(cause, targetAmount, deadlineInSeconds);
 
             const newFundsCount = await charityFundContract.fundsCount();
             expect(newFundsCount).to.equal(initialFundsCount + BigInt(1));
@@ -38,7 +38,7 @@ describe("CharityFund", function () {
             const newFund = await charityFundContract.funds(initialFundsCount);
             expect(newFund.cause).to.equal(cause);
             expect(newFund.targetAmount).to.equal(targetAmount);
-            expect(newFund.deadline).to.equal(await time.latest() + time.duration.days(deadline));
+            expect(newFund.deadline).to.equal(await time.latest() + deadlineInSeconds); // Use the correct value here
             expect(newFund.isClosed).to.equal(false);
         })
 
@@ -46,9 +46,9 @@ describe("CharityFund", function () {
             const { charityFundContract, otherAccount } = await loadFixture(deployCharityFund);
             const cause = 'Cause3';
             const targetAmount = ethers.parseEther('1');
-            const deadlineInDays = 1;
+            const deadline = time.duration.days(1);
 
-            const createFundTx = charityFundContract.connect(otherAccount).createFund(cause, targetAmount, deadlineInDays);
+            const createFundTx = charityFundContract.connect(otherAccount).createFund(cause, targetAmount, deadline);
             await expect(createFundTx).to.be.revertedWith('Ownable: caller is not the owner');
         });
     })
