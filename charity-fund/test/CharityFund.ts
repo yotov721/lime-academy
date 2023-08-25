@@ -152,7 +152,7 @@ describe("CharityFund", function () {
             await charityFundContract.connect(otherAccount).donate(0, { value: ethers.parseEther("1") });
 
             await expect(charityFundContract.connect(otherAccount).getRefund(0)).to.be.revertedWith(
-                "The is still running"
+                "The fund is still running"
             );
         });
 
