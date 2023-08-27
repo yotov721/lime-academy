@@ -40,9 +40,10 @@ describe("CharityFund", function () {
             expect(newFund.targetAmount).to.equal(targetAmount);
             expect(newFund.deadline).to.equal(await time.latest() + deadlineInSeconds); // Use the correct value here
             expect(newFund.isClosed).to.equal(false);
+            expect(newFund.fundsCollected).to.equal(false);
         })
 
-        it('Should prevent non-owner from creating a fund', async function () {
+        it("Should prevent non-owner from creating a fund", async function () {
             const { charityFundContract, otherAccount } = await loadFixture(deployCharityFund);
             const cause = 'Cause3';
             const targetAmount = ethers.parseEther('1');
@@ -50,6 +51,37 @@ describe("CharityFund", function () {
 
             const createFundTx = charityFundContract.connect(otherAccount).createFund(cause, targetAmount, deadline);
             await expect(createFundTx).to.be.revertedWith('Ownable: caller is not the owner');
+        });
+
+        it("Should revert when cause is empty", async function () {
+            const { charityFundContract } = await loadFixture(deployCharityFund);
+            const cause = '';
+            const targetAmount = ethers.parseEther('1');
+            const deadline = time.duration.days(1);
+
+            const createFundTx = charityFundContract.createFund(cause, targetAmount, deadline);
+            await expect(createFundTx).to.be.revertedWith('InvalidFundsData');
+        });
+
+
+        it("Should revert when target amount is 0", async function () {
+            const { charityFundContract } = await loadFixture(deployCharityFund);
+            const cause = 'Cause4';
+            const targetAmount = ethers.parseEther('0');
+            const deadline = time.duration.days(1);
+
+            const createFundTx = charityFundContract.createFund(cause, targetAmount, deadline);
+            await expect(createFundTx).to.be.revertedWith('InvalidFundsData');
+        });
+
+        it("Should revert when duration is 0", async function () {
+            const { charityFundContract } = await loadFixture(deployCharityFund);
+            const cause = 'Cause4';
+            const targetAmount = ethers.parseEther('1');
+            const deadline = time.duration.days(0);
+
+            const createFundTx = charityFundContract.createFund(cause, targetAmount, deadline);
+            await expect(createFundTx).to.be.revertedWith('InvalidFundsData');
         });
     })
 
@@ -115,6 +147,16 @@ describe("CharityFund", function () {
             const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
 
             expect(ownerBalanceAfter).to.be.gt(ownerBalanceBefore);
+        });
+
+        it("Should revert when owner tries to collect funds twice", async function () {
+            const { owner, otherAccount, charityFundContract, targetAmount } = await loadFixture(deployCharityFund);
+            await charityFundContract.connect(otherAccount).donate(0, { value: targetAmount });
+
+            const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
+            await charityFundContract.connect(owner).collectFunds(0);
+
+            expect(charityFundContract.connect(owner).collectFunds(0)).to.be.reverted;
         });
 
         it("Should revert when a non-owner tries to collect funds", async function () {

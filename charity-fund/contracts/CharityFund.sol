@@ -18,6 +18,7 @@ contract Charityfund is Ownable {
         uint256 donatedAmount;      // The total amount of Ether donated
         uint256 deadline;           // The deadline for donations
         bool isClosed;              // Flag indicating if the fund is closed
+        bool fundsCollected;        // Flag indicating iof the owner has collected the funds
         mapping(address => uint256) userDonation; // Mapping of user addresses to their donations
     }
 
@@ -33,6 +34,8 @@ contract Charityfund is Ownable {
     error DonationExceedsTargetError();
     error FundNotClosedError();
     error NotDonatedError();
+    error FundsCollectedError();
+    error InvalidFundsData();
 
     // Events emitted by the contract
     event FundCreated(uint256 fundId, string cause, uint256 targetAmount, uint256 deadline);
@@ -50,12 +53,24 @@ contract Charityfund is Ownable {
     }
 
     /**
+     * @dev Modifier to ensure valid fund data.
+     * @param _cause The cause for the fund.
+     * @param _targetAmount The target amount of funds.
+     * @param _deadlineInSeconds The deadline for raising funds in seconds.
+     * @notice This modifier checks that the provided fund data is valid before allowing a function to execute.
+     */
+    modifier validFundData(string memory _cause, uint256 _targetAmount, uint256 _deadlineInSeconds) {
+        require(_targetAmount > 0 && _deadlineInSeconds > 0 && bytes(_cause).length > 0, "InvalidFundsData");
+        _;
+    }
+
+    /**
      * @dev Creates a new charity fund.
      * @param _cause The cause or purpose of the fund.
      * @param _targetAmount The target amount of Ether to be raised.
      * @param _deadlineInSeconds The duration of the fund in seconds.
      */
-    function createFund(string memory _cause, uint256 _targetAmount, uint256 _deadlineInSeconds) external onlyOwner {
+    function createFund(string memory _cause, uint256 _targetAmount, uint256 _deadlineInSeconds) external onlyOwner validFundData(_cause, _targetAmount, _deadlineInSeconds) {
         uint256 deadline = block.timestamp.add(_deadlineInSeconds);
         Fund storage newFund = funds[fundsCount++];
         newFund.cause = _cause;
@@ -92,8 +107,9 @@ contract Charityfund is Ownable {
     function collectFunds(uint256 fundId) external onlyOwner {
         Fund storage fund = funds[fundId];
         if (!fund.isClosed) revert FundNotClosedError();
+        if (fund.fundsCollected) revert FundsCollectedError();
         uint256 balance = fund.donatedAmount;
-        fund.donatedAmount = 0;
+        fund.fundsCollected = true;
         payable(owner()).transfer(balance);
     }
 
