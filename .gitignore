@@ -1,3 +1,6 @@
 .vscode
 node_modules
 .env
+
+checklist_report*
+slither-findings.md
