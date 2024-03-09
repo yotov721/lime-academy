@@ -16,7 +16,7 @@ https://sepolia.etherscan.io/address/0xd973670e9aA4a14865eA806f618B0073C11d7965#
 https://sepolia.etherscan.io/address/0xd973670e9aA4a14865eA806f618B0073C11d7965#code
 
 ## Install slither
-pip install slither-analyzer <br>
+`pip install slither-analyzer` <br>
 Add the following to path <br>
 `C:\Users\{USER}\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\Local-packages\Python310\Scripts`
 
