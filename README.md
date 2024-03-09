@@ -13,3 +13,11 @@ Successfully verified contract BookLibrary on the block explorer.
 https://sepolia.etherscan.io/address/0xd973670e9aA4a14865eA806f618B0073C11d7965#code
 
 ## Verified contract:  https://sepolia.etherscan.io/address/0xd973670e9aA4a14865eA806f618B0073C11d7965#code
+
+## Install slither
+pip install slither-analyzer
+Add the following to path
+C:\Users\{USER}\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\Local-packages\Python310\Scripts
+
+Run locally:
+slither . --checklist > checklist_report.md
